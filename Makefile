@@ -45,11 +45,10 @@ gen/assets.c: web/index.html web/app.js web/style.css tools/embed_assets.py
 	mkdir -p gen
 	$(PYTHON) tools/embed_assets.py $@ web
 
-build/%.o: %.c Makefile | build/gen
+# Object files land in build/<path>/, so each directory must exist first.
+build/%.o: %.c Makefile
+	mkdir -p $(dir $@)
 	"$(CC)" $(CFLAGS_COMMON) -c $< -o $@
-
-build/gen:
-	mkdir -p build/gen
 
 $(BIN): $(OBJS)
 	"$(CC)" $(CFLAGS_COMMON) $(LDFLAGS_COMMON) -o $@ $(OBJS)
