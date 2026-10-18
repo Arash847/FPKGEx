@@ -1,0 +1,119 @@
+name: Build fPKGEx
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build payload ELF
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    env:
+      # ps5-payload-sdk v0.43 release archive.
+      SDK_URL: https://github.com/ps5-payload-dev/sdk/releases/download/v0.43/ps5-payload-sdk.zip
+      SDK_SHA256: a9cc9929f21b2b2c5d5b309f3bab4997067c45281c0622cf4838b1aecba66fcb
+      LLVM_CONFIG: /usr/bin/llvm-config-18
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang-18 lld-18 llvm-18-dev make python3 unzip curl binutils file
+
+      - name: Download PS5 payload SDK
+        run: |
+          curl --fail --location --retry 3 \
+            --output "$RUNNER_TEMP/ps5-payload-sdk.zip" "$SDK_URL"
+          echo "$SDK_SHA256  $RUNNER_TEMP/ps5-payload-sdk.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/ps5-payload-sdk.zip" -d "$RUNNER_TEMP/sdk"
+          echo "PS5_PAYLOAD_SDK=$RUNNER_TEMP/sdk/ps5-payload-sdk" >> "$GITHUB_ENV"
+
+      - name: Build fpkgex.elf
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            build_version="$GITHUB_REF_NAME"
+          else
+            build_version="$(git describe --tags --always --dirty)"
+          fi
+          make -j"$(nproc)" BUILD_VERSION="$build_version"
+          file fpkgex.elf
+          readelf -h fpkgex.elf | grep -Eq 'Class:[[:space:]]+ELF64'
+          readelf -h fpkgex.elf | grep -Eq 'Machine:[[:space:]]+Advanced Micro Devices X86-64'
+          sha256sum fpkgex.elf > SHA256SUMS
+
+      - name: Verify web assets were embedded
+        run: |
+          test -s gen/assets.c
+          grep -q '/index.html' gen/assets.c
+          grep -q '/app.js' gen/assets.c
+
+      - name: Record payload manager checksum
+        run: |
+          sum="$(cut -d' ' -f1 SHA256SUMS)"
+          python3 - "$sum" <<'PY'
+          import json, sys
+          digest = sys.argv[1]
+          path = "payload-manager/fpkgex.elf.json"
+          with open(path, encoding="utf-8") as f:
+              data = json.load(f)
+          data["sha256"] = digest
+          with open(path, "w", encoding="utf-8") as f:
+              json.dump(data, f, indent=2)
+              f.write("\n")
+          print("recorded", digest)
+          PY
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fpkgex-${{ github.sha }}
+          path: |
+            fpkgex.elf
+            SHA256SUMS
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" fpkgex.elf SHA256SUMS --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" fpkgex.elf SHA256SUMS \
+              --verify-tag --generate-notes --title "fPKGEx $GITHUB_REF_NAME"
+          fi
+
+  lint:
+    name: Portable source lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang-18 lld-18 llvm-18-dev make python3
+
+      - name: Compile every unit against a hosted libc
+        run: |
+          python3 tools/embed_assets.py gen/assets.c web
+          for src in src/*.c gen/assets.c; do
+            echo "checking $src"
+            clang-18 -std=gnu11 -Wall -Wextra -Werror -Isrc -fsyntax-only "$src"
+          done

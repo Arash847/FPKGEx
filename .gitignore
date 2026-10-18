@@ -1,0 +1,25 @@
+# Build outputs
+/build/
+/gen/
+/fpkgex.elf
+/SHA256SUMS
+
+# .NET CLI artefacts
+**/bin/
+**/obj/
+
+# Test artefacts
+/tests/_inflate_test.exe
+/tests/_inflate_dbg.exe
+/tests/_fpkg_test.exe
+/tests/_fpkg_dbg.exe
+/tests/_innerfs_test.exe
+/tests/*.pdb
+/tests/_inflate_tmp/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp

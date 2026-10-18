@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>fpkgex</AssemblyName>
+    <RootNamespace>FpkgEx</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <AssemblyTitle>fPKGEx</AssemblyTitle>
+    <Version>0.2.0</Version>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <!--
+    The extraction engine is LibProsperoPkg.dll, which ships with the FPKG GUI.
+    Point FpkgExEngineDir at that folder (or pass the engine path at run time)
+    to override the default location.
+  -->
+  <PropertyGroup Condition="'$(FpkgExEngineDir)' == ''">
+    <FpkgExEngineDir>D:\- PS5\FPKG GUI</FpkgExEngineDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="LibProsperoPkg">
+      <HintPath>$(FpkgExEngineDir)\LibProsperoPkg.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

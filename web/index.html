@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fPKGEx</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <span class="logo">fPKGEx</span>
+    <span class="sub" id="version">connecting&hellip;</span>
+  </div>
+  <div class="status" id="conn"><span class="dot"></span>offline</div>
+</header>
+
+<main>
+  <section class="panel" id="picker">
+    <h2>1 &middot; Choose a package</h2>
+    <div class="row">
+      <select id="volumes" class="grow"></select>
+      <button id="browse" class="btn">Browse</button>
+      <button id="refresh" class="btn ghost" title="Reload this folder">&#8635;</button>
+    </div>
+    <div class="pathrow">
+      <input id="curpath" class="grow mono" readonly value="/mnt/usb0">
+      <button id="up" class="btn ghost" title="Parent folder">&uarr;</button>
+    </div>
+    <ul id="entries" class="entries"></ul>
+    <div class="row">
+      <input id="manual" class="grow mono" placeholder="…or type a full path, e.g. /mnt/usb0/game.pkg">
+      <button id="open" class="btn primary">Identify</button>
+    </div>
+  </section>
+
+  <section class="panel hidden" id="info">
+    <h2>2 &middot; Package</h2>
+    <div class="artrow">
+      <div class="hero">
+        <img id="pic0" alt="Key art" class="artbox">
+        <div class="artfallback" id="pic0fallback">no key art</div>
+      </div>
+      <div class="hero small">
+        <img id="icon0" alt="Icon" class="artbox icon">
+        <div class="artfallback" id="icon0fallback">no icon</div>
+      </div>
+      <div class="meta">
+        <h1 id="titleName">&mdash;</h1>
+        <dl>
+          <dt>Version</dt><dd id="version2" class="mono">&mdash;</dd>
+          <dt>Title ID</dt><dd id="titleId" class="mono">&mdash;</dd>
+          <dt>Content ID</dt><dd id="contentId" class="mono wrap">&mdash;</dd>
+          <dt>DRM</dt><dd id="drm">&mdash;</dd>
+          <dt>Package size</dt><dd id="fileSize">&mdash;</dd>
+          <dt>Files found</dt><dd id="fileCount">&mdash;</dd>
+          <dt>Extractable</dt><dd id="extractBytes">&mdash;</dd>
+        </dl>
+      </div>
+    </div>
+    <div class="warn hidden" id="opaque"></div>
+  </section>
+
+  <section class="panel hidden" id="extract">
+    <h2>3 &middot; Extract</h2>
+    <div class="row">
+      <input id="dest" class="grow mono" placeholder="/mnt/usb0/Extracted">
+      <button id="go" class="btn primary">Start extraction</button>
+      <button id="cancel" class="btn ghost hidden">Cancel</button>
+    </div>
+    <div class="volhint" id="volhint"></div>
+    <div class="progress hidden" id="progress">
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <div class="prow">
+        <span id="pstate">idle</span>
+        <span id="pfile" class="mono wrap"></span>
+        <span id="pbytes" class="mono"></span>
+      </div>
+    </div>
+    <p class="msg" id="msg"></p>
+  </section>
+
+  <section class="panel hidden" id="files">
+    <h2>Files</h2>
+    <ul id="filelist" class="filelist"></ul>
+  </section>
+</main>
+
+<footer>
+  <span id="foot">fPKGEx &middot; runs entirely on the console</span>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

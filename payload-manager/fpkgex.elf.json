@@ -1,0 +1,11 @@
+{
+  "name": "fPKGEx",
+  "version": "0.1.0",
+  "author": "fPKGEx",
+  "description": "Identify a PS5 fPKG on the console and extract its contents.",
+  "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "url": "https://github.com/Arash847/FPKGEx",
+  "repository": "Arash847/FPKGEx",
+  "license": "MIT",
+  "tags": ["fpkg", "ps5", "extract"]
+}
