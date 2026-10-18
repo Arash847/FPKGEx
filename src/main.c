@@ -8,6 +8,7 @@
 #include "api.h"
 #include "httpd.h"
 #include "jobs.h"
+#include "notify.h"
 
 #include <ifaddrs.h>
 #include <net/if.h>
@@ -31,10 +32,19 @@
 static void
 on_ready(unsigned short port, void *arg) {
     char ip[64];
+    char url[160];
     (void)arg;
+
     api_detect_lan_ip(ip, sizeof(ip));
-    fprintf(stderr, "fPKGEx %s ready at http://%s:%u/\n",
-            FPKEX_VERSION, ip, (unsigned)port);
+    snprintf(url, sizeof(url), "http://%s:%u/", ip, (unsigned)port);
+
+    /* Tell the user where to point a browser. Best effort: on kernels without
+     * the notification entry point this is a no-op. */
+    if(fpkgex_notify("fPKGEx ready", url) != 0) {
+        fprintf(stderr, "fPKGEx: system notification unavailable\n");
+    }
+
+    fprintf(stderr, "fPKGEx %s ready at %s\n", FPKEX_VERSION, url);
     fflush(stderr);
 }
 

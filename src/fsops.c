@@ -164,6 +164,13 @@ fs_list_dir(const char *path, fs_dirent_t *out, int max) {
     DIR           *d;
     struct dirent *de;
     int            n = 0;
+    /*
+     * Stat'ing every entry is cheap on internal storage but a large external
+     * drive can spend minutes in per-file metadata round trips. Size only the
+     * first few hundred entries and report the rest as unknown, so listing a
+     * folder stays responsive.
+     */
+    const int      stat_budget = 256;
 
     if(!path || !out || max <= 0) return -1;
     d = opendir(path);
@@ -176,8 +183,11 @@ fs_list_dir(const char *path, fs_dirent_t *out, int max) {
 
         memcpy(out[n].name, de->d_name, len + 1);
         out[n].is_dir = (de->d_type == DT_DIR) ? 1 : 0;
-        out[n].size = 0;
-        if(!out[n].is_dir) {
+        out[n].size = -1;
+
+        if(out[n].is_dir) {
+            out[n].size = 0;
+        } else if(n < stat_budget) {
             char full[FS_PATH_MAX];
             fs_path_join(full, sizeof(full), path, de->d_name);
             out[n].size = fs_file_size(full);

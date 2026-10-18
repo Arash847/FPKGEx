@@ -24,6 +24,7 @@ C_SRCS += src/fpkg.c
 C_SRCS += src/innerfs.c
 C_SRCS += src/inflate.c
 C_SRCS += src/jsonutil.c
+C_SRCS += src/notify.c
 
 GEN_C   := gen/assets.c
 OBJS    := $(patsubst %.c,build/%.o,$(C_SRCS) $(GEN_C))

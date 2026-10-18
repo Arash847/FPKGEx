@@ -27,6 +27,7 @@
 #define CLIENT_STACK    (512 * 1024)
 #define IDLE_TIMEOUT_S  60
 #define READ_TIMEOUT_S  300
+#define HANDLER_TIMEOUT_S 600
 
 static int              g_srvfd = -1;
 static pthread_mutex_t  g_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -386,6 +387,19 @@ client_thread(void *arg) {
     }
 
     if(handler) {
+        /*
+         * Handlers that walk an external drive can spend a long time before
+         * they produce their first byte, and the client is blocked reading
+         * meanwhile. Give the socket a longer leash than the request read
+         * above, otherwise a large USB directory trips the idle timeout and the
+         * browser sees an empty reply.
+         */
+        struct timeval htv;
+        htv.tv_sec = HANDLER_TIMEOUT_S;
+        htv.tv_usec = 0;
+        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &htv, sizeof(htv));
+        setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &htv, sizeof(htv));
+
         int status = handler(&req, user);
         if(status != 404) {
             close(fd);

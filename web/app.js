@@ -13,12 +13,28 @@ function fmtBytes(n) {
 
 async function api(path, opts) {
   const res = await fetch(path, opts || {});
-  const text = await res.text();
+  let text;
+  try {
+    text = await res.text();
+  } catch (e) {
+    throw new Error("no response from the payload (is it still running?)");
+  }
+
   let data = null;
-  try { data = JSON.parse(text); } catch (_) { /* non-JSON error page */ }
-  if (!res.ok || (data && data.ok === false)) {
-    const msg = (data && data.error) || ("HTTP " + res.status);
-    throw new Error(msg);
+  try {
+    data = JSON.parse(text);
+  } catch (_) {
+    // Not JSON: fall through to the status-based error below.
+  }
+
+  if (data && typeof data === "object" && data.ok === false) {
+    throw new Error(data.error || ("HTTP " + res.status));
+  }
+  if (!res.ok) {
+    throw new Error(data && data.error ? data.error : ("HTTP " + res.status));
+  }
+  if (!data || typeof data !== "object") {
+    throw new Error("unexpected reply from the payload (HTTP " + res.status + ")");
   }
   return data;
 }
@@ -96,11 +112,12 @@ async function browse(path) {
   try {
     const data = await api("/api/browse?path=" + encodeURIComponent(path));
     ul.innerHTML = "";
-    if (!data.entries.length) {
+    const items = Array.isArray(data.entries) ? data.entries : [];
+    if (!items.length) {
       ul.innerHTML = '<li class="empty">folder is empty</li>';
       return;
     }
-    for (const e of data.entries) {
+    for (const e of items) {
       const li = document.createElement("li");
       const name = document.createElement("span");
       name.textContent = (e.dir ? "📁 " : e.package ? "📦 " : "📄 ") + e.name;
